@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Almoxarifado PM — Estoque</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root { --bg:#0b0f16;--surface:#111827;--border:#1f2d3d;--text:#e2e8f0;--muted:#64748b;--green:#10b981;--amber:#f59e0b;--red:#ef4444;--blue:#3b82f6;--accent:#0ea5e9; }
+  * { box-sizing:border-box;margin:0;padding:0; }
+  body { background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh; }
+  .sidebar { width:220px;background:var(--surface);border-right:1px solid var(--border);min-height:100vh;position:fixed;top:0;left:0;z-index:10;display:flex;flex-direction:column; }
+  .sidebar-logo { padding:24px 20px 20px;border-bottom:1px solid var(--border); }
+  .sidebar-logo h1 { font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.3rem;letter-spacing:0.05em;color:white;line-height:1.2; }
+  .sidebar-logo p { font-size:0.7rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-top:4px; }
+  .nav-item { display:flex;align-items:center;gap:12px;padding:12px 20px;color:var(--muted);font-size:0.9rem;font-weight:500;text-decoration:none;border-left:3px solid transparent;transition:all .15s; }
+  .nav-item:hover { background:rgba(14,165,233,0.08);color:var(--text);border-left-color:var(--accent); }
+  .nav-item.active { color:var(--accent);border-left-color:var(--accent);background:rgba(14,165,233,0.1); }
+  .main { margin-left:220px;padding:32px;min-height:100vh; }
+  .page-header { margin-bottom:24px;display:flex;align-items:center;justify-content:space-between; }
+  .page-header h2 { font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:800;letter-spacing:0.03em;text-transform:uppercase; }
+  .btn { display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:6px;font-size:0.85rem;font-weight:600;cursor:pointer;border:none;transition:all .15s; }
+  .btn-primary { background:var(--accent);color:white; }
+  .btn-primary:hover { background:#0284c7; }
+  .btn-success { background:var(--green);color:white; }
+  .btn-danger { background:var(--red);color:white;font-size:0.75rem;padding:6px 12px; }
+  .btn-ghost { background:rgba(255,255,255,0.05);color:var(--text);border:1px solid var(--border); }
+  .btn-ghost:hover { background:rgba(255,255,255,0.1); }
+  .card { background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden; }
+  .card-header { padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap; }
+  .card-title { font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em; }
+  input,select,textarea { background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:9px 12px;font-size:0.85rem;font-family:'Barlow',sans-serif;transition:border .15s;width:100%; }
+  input:focus,select:focus,textarea:focus { outline:none;border-color:var(--accent); }
+  select option { background:#111827; }
+  label { font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);font-weight:600;display:block;margin-bottom:5px; }
+  .form-grid { display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));padding:20px; }
+  table { width:100%;border-collapse:collapse; }
+  th { padding:10px 14px;text-align:left;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);border-bottom:1px solid var(--border);font-weight:600; }
+  td { padding:11px 14px;font-size:0.85rem;border-bottom:1px solid rgba(31,45,61,0.6);vertical-align:middle; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(14,165,233,0.04); }
+  .mono { font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--accent); }
+  .badge { display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase; }
+  .badge-verde   { background:rgba(16,185,129,0.15);color:#10b981; }
+  .badge-azul    { background:rgba(59,130,246,0.15);color:#60a5fa; }
+  .badge-amarelo { background:rgba(245,158,11,0.15);color:#f59e0b; }
+  .badge-vermelho{ background:rgba(239,68,68,0.15);color:#ef4444; }
+  .badge-cinza   { background:rgba(100,116,139,0.15);color:#94a3b8; }
+  /* Modal */
+  .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:50;display:flex;align-items:center;justify-content:center; }
+  .modal-box { background:var(--surface);border:1px solid var(--border);border-radius:10px;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;padding:28px; }
+  .modal-title { font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;text-transform:uppercase;margin-bottom:20px; }
+  .modal-actions { display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border); }
+  #toast-container { position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px; }
+  .toast-item { transition:opacity .4s; }
+  .search-bar { display:flex;gap:10px;align-items:center;flex:1; }
+  .filtros { display:flex;gap:8px;align-items:center;flex-wrap:wrap; }
+  .disp-bar { display:flex;align-items:center;gap:4px;font-size:0.75rem; }
+  .disp-full { color:var(--green); }
+  .disp-partial { color:var(--amber); }
+  .disp-none { color:var(--red); }
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div style="font-size:2rem;margin-bottom:8px;">🚔</div>
+    <h1>ALMOXARIFADO<br>ARMAMENTOS</h1>
+    <p>Sistema de Gestão PM</p>
+  </div>
+  <div style="padding:16px 0;">
+    <a href="/" class="nav-item"><span>📊</span> Dashboard</a>
+    <a href="/painel-cautela" class="nav-item"><span>📋</span> Cautelas</a>
+    <a href="/estoque" class="nav-item active"><span>🔫</span> Estoque</a>
+    <a href="/efetivo" class="nav-item"><span>👮</span> Efetivo</a>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h2>🔫 Gestão de Estoque</h2>
+      <p style="color:var(--muted);font-size:0.85rem;margin-top:4px;">Armamentos, coletes, rádios e demais materiais</p>
+    </div>
+    <button class="btn btn-primary" onclick="abrirModalNovo()">＋ Novo Item</button>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="search-bar">
+        <input id="busca" type="text" placeholder="🔍  Buscar por descrição ou número de série..." style="max-width:340px;" oninput="filtrar()">
+      </div>
+      <div class="filtros">
+        <select id="filtro-tipo" onchange="filtrar()" style="width:auto;">
+          <option value="">Todos os Tipos</option>
+        </select>
+        <select id="filtro-condicao" onchange="filtrar()" style="width:auto;">
+          <option value="">Todas Condições</option>
+        </select>
+        <label style="display:flex;align-items:center;gap:6px;margin:0;text-transform:none;letter-spacing:0;color:var(--muted);cursor:pointer;">
+          <input type="checkbox" id="apenas-disp" onchange="filtrar()" style="width:auto;padding:0;"> Só disponíveis
+        </label>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Descrição</th><th>Tipo</th><th>Nº Série</th><th>Qtd Total</th><th>Disponível</th><th>Condição</th><th>Local</th><th>Ações</th></tr>
+      </thead>
+      <tbody id="tabela-itens"></tbody>
+    </table>
+  </div>
+</main>
+
+<!-- MODAL NOVO/EDITAR ITEM -->
+<div id="modal-item" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-item-titulo">Novo Item</div>
+    <input type="hidden" id="item-id">
+    <div class="form-grid" style="padding:0;">
+      <div style="grid-column:1/-1">
+        <label>Descrição *</label>
+        <input id="item-descricao" placeholder="Ex: Pistola Glock G22 Cal .40" required>
+      </div>
+      <div>
+        <label>Tipo de Material *</label>
+        <select id="item-tipo"></select>
+      </div>
+      <div>
+        <label>Número de Série</label>
+        <input id="item-serie" placeholder="Ex: PM-2024-001" style="font-family:'JetBrains Mono',monospace;">
+      </div>
+      <div>
+        <label>Quantidade Total *</label>
+        <input id="item-qtd-total" type="number" min="0" value="1">
+      </div>
+      <div>
+        <label>Quantidade Disponível *</label>
+        <input id="item-qtd-disp" type="number" min="0" value="1">
+      </div>
+      <div>
+        <label>Condição *</label>
+        <select id="item-condicao"></select>
+      </div>
+      <div>
+        <label>Localização (Prateleira)</label>
+        <input id="item-local" placeholder="Ex: Armário A, Gaveta 3">
+      </div>
+      <div style="grid-column:1/-1">
+        <label>Observações</label>
+        <textarea id="item-obs" rows="2" placeholder="Informações adicionais..."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-item')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarItem()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="/static/app.js"></script>
+<script>
+let todosItens = [];
+
+// Popula selects
+TIPOS_MATERIAL.forEach(t => {
+  document.getElementById("item-tipo").innerHTML += `<option>${t}</option>`;
+  document.getElementById("filtro-tipo").innerHTML += `<option value="${t}">${t}</option>`;
+});
+CONDICOES.forEach(c => {
+  document.getElementById("item-condicao").innerHTML += `<option>${c}</option>`;
+  document.getElementById("filtro-condicao").innerHTML += `<option value="${c}">${c}</option>`;
+});
+
+async function carregarItens() {
+  try {
+    todosItens = await apiFetch("/itens/");
+    renderTabela(todosItens);
+  } catch(e) { toast("Erro ao carregar itens: " + e.message, "erro"); }
+}
+
+function filtrar() {
+  const busca = document.getElementById("busca").value.toLowerCase();
+  const tipo = document.getElementById("filtro-tipo").value;
+  const cond = document.getElementById("filtro-condicao").value;
+  const apenasDisp = document.getElementById("apenas-disp").checked;
+  let lista = todosItens.filter(i =>
+    (!busca || i.descricao.toLowerCase().includes(busca) || (i.numero_serie||"").toLowerCase().includes(busca)) &&
+    (!tipo  || i.tipo_material === tipo) &&
+    (!cond  || i.condicao === cond) &&
+    (!apenasDisp || i.quantidade_disponivel > 0)
+  );
+  renderTabela(lista);
+}
+
+function renderTabela(lista) {
+  const tb = document.getElementById("tabela-itens");
+  if (!lista.length) {
+    tb.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px;">Nenhum item encontrado.</td></tr>`;
+    return;
+  }
+  tb.innerHTML = lista.map(i => {
+    const pct = i.quantidade_total > 0 ? i.quantidade_disponivel/i.quantidade_total : 0;
+    const dispClass = pct === 1 ? "disp-full" : pct > 0 ? "disp-partial" : "disp-none";
+    return `<tr>
+      <td><strong>${i.descricao}</strong>${i.observacoes?`<br><small style="color:var(--muted)">${i.observacoes.substring(0,60)}...</small>`:''}</td>
+      <td><span class="badge badge-azul">${i.tipo_material}</span></td>
+      <td class="mono">${i.numero_serie || '—'}</td>
+      <td style="text-align:center;">${i.quantidade_total}</td>
+      <td><span class="${dispClass}" style="font-weight:600;">${i.quantidade_disponivel}</span></td>
+      <td>${badgeCondicao(i.condicao)}</td>
+      <td style="color:var(--muted);font-size:0.8rem;">${i.localizacao || '—'}</td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-ghost" style="padding:5px 10px;font-size:0.75rem;" onclick="editarItem(${i.id})">✏</button>
+          <button class="btn btn-danger" onclick="deletarItem(${i.id},'${i.descricao.replace(/'/g,"\\'")}')">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function abrirModalNovo() {
+  document.getElementById("modal-item-titulo").textContent = "Novo Item";
+  document.getElementById("item-id").value = "";
+  ["item-descricao","item-serie","item-local","item-obs"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("item-qtd-total").value = 1;
+  document.getElementById("item-qtd-disp").value = 1;
+  document.getElementById("item-tipo").value = "Armamento";
+  document.getElementById("item-condicao").value = "Bom";
+  abrirModal("modal-item");
+}
+
+async function editarItem(id) {
+  try {
+    const i = await apiFetch(`/itens/${id}`);
+    document.getElementById("modal-item-titulo").textContent = "Editar Item";
+    document.getElementById("item-id").value = i.id;
+    document.getElementById("item-descricao").value = i.descricao;
+    document.getElementById("item-serie").value = i.numero_serie || "";
+    document.getElementById("item-tipo").value = i.tipo_material;
+    document.getElementById("item-qtd-total").value = i.quantidade_total;
+    document.getElementById("item-qtd-disp").value = i.quantidade_disponivel;
+    document.getElementById("item-condicao").value = i.condicao;
+    document.getElementById("item-local").value = i.localizacao || "";
+    document.getElementById("item-obs").value = i.observacoes || "";
+    abrirModal("modal-item");
+  } catch(e) { toast("Erro: " + e.message, "erro"); }
+}
+
+async function salvarItem() {
+  const id = document.getElementById("item-id").value;
+  const dados = {
+    descricao:             document.getElementById("item-descricao").value.trim(),
+    tipo_material:         document.getElementById("item-tipo").value,
+    numero_serie:          document.getElementById("item-serie").value.trim() || null,
+    quantidade_total:      parseInt(document.getElementById("item-qtd-total").value),
+    quantidade_disponivel: parseInt(document.getElementById("item-qtd-disp").value),
+    condicao:              document.getElementById("item-condicao").value,
+    localizacao:           document.getElementById("item-local").value.trim() || null,
+    observacoes:           document.getElementById("item-obs").value.trim() || null,
+  };
+  if (!dados.descricao) { toast("Preencha a descrição do item.", "aviso"); return; }
+  try {
+    if (id) {
+      await apiFetch(`/itens/${id}`, { method:"PUT", body:JSON.stringify(dados) });
+      toast("Item atualizado com sucesso.", "sucesso");
+    } else {
+      await apiFetch("/itens/", { method:"POST", body:JSON.stringify(dados) });
+      toast("Item cadastrado com sucesso.", "sucesso");
+    }
+    fecharModal("modal-item");
+    carregarItens();
+  } catch(e) { toast("Erro: " + e.message, "erro"); }
+}
+
+async function deletarItem(id, descricao) {
+  if (!confirm(`Confirma a exclusão de "${descricao}"?\nEsta ação não pode ser desfeita.`)) return;
+  try {
+    await apiFetch(`/itens/${id}`, { method:"DELETE" });
+    toast("Item removido.", "sucesso");
+    carregarItens();
+  } catch(e) { toast("Erro: " + e.message, "erro"); }
+}
+
+carregarItens();
+
+// Suporte a leitor de código de barras (Enter no campo de busca)
+document.getElementById("busca").addEventListener("keydown", e => {
+  if (e.key === "Enter") filtrar();
+});
+</script>
+</body>
+</html>

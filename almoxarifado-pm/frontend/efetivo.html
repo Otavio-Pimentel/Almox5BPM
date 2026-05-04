@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Almoxarifado PM — Efetivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{--bg:#0b0f16;--surface:#111827;--border:#1f2d3d;--text:#e2e8f0;--muted:#64748b;--green:#10b981;--amber:#f59e0b;--red:#ef4444;--blue:#3b82f6;--accent:#0ea5e9;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;}
+  .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);min-height:100vh;position:fixed;top:0;left:0;z-index:10;display:flex;flex-direction:column;}
+  .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+  .sidebar-logo h1{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.3rem;letter-spacing:0.05em;color:white;line-height:1.2;}
+  .sidebar-logo p{font-size:0.7rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-top:4px;}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:12px 20px;color:var(--muted);font-size:0.9rem;font-weight:500;text-decoration:none;border-left:3px solid transparent;transition:all .15s;}
+  .nav-item:hover{background:rgba(14,165,233,0.08);color:var(--text);border-left-color:var(--accent);}
+  .nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(14,165,233,0.1);}
+  .main{margin-left:220px;padding:32px;min-height:100vh;}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:6px;font-size:0.85rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;}
+  .btn-primary{background:var(--accent);color:white;}
+  .btn-primary:hover{background:#0284c7;}
+  .btn-danger{background:var(--red);color:white;font-size:0.75rem;padding:6px 12px;}
+  .btn-ghost{background:rgba(255,255,255,0.05);color:var(--text);border:1px solid var(--border);}
+  .btn-ghost:hover{background:rgba(255,255,255,0.1);}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .card-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .card-title{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;}
+  input,select,textarea{background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:9px 12px;font-size:0.85rem;font-family:'Barlow',sans-serif;transition:border .15s;width:100%;}
+  input:focus,select:focus{outline:none;border-color:var(--accent);}
+  select option{background:#111827;}
+  label{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);font-weight:600;display:block;margin-bottom:5px;}
+  table{width:100%;border-collapse:collapse;}
+  th{padding:10px 14px;text-align:left;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);border-bottom:1px solid var(--border);font-weight:600;}
+  td{padding:11px 14px;font-size:0.85rem;border-bottom:1px solid rgba(31,45,61,0.6);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:rgba(14,165,233,0.04);}
+  .mono{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--accent);}
+  .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;}
+  .badge-verde{background:rgba(16,185,129,0.15);color:#10b981;}
+  .badge-azul{background:rgba(59,130,246,0.15);color:#60a5fa;}
+  .badge-amarelo{background:rgba(245,158,11,0.15);color:#f59e0b;}
+  .badge-vermelho{background:rgba(239,68,68,0.15);color:#ef4444;}
+  .badge-cinza{background:rgba(100,116,139,0.15);color:#94a3b8;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:50;display:flex;align-items:center;justify-content:center;}
+  .modal-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;padding:28px;}
+  .modal-title{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;text-transform:uppercase;margin-bottom:20px;}
+  .form-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
+  #toast-container{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;}
+  .toast-item{transition:opacity .4s;}
+  .avatar{width:36px;height:36px;border-radius:50%;background:rgba(14,165,233,0.2);border:1px solid rgba(14,165,233,0.4);display:inline-flex;align-items:center;justify-content:center;font-size:1rem;}
+  .posto-tag{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;color:var(--accent);min-width:48px;display:inline-block;}
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div style="font-size:2rem;margin-bottom:8px;">🚔</div>
+    <h1>ALMOXARIFADO<br>ARMAMENTOS</h1>
+    <p>Sistema de Gestão PM</p>
+  </div>
+  <div style="padding:16px 0;">
+    <a href="/" class="nav-item"><span>📊</span> Dashboard</a>
+    <a href="/painel-cautela" class="nav-item"><span>📋</span> Cautelas</a>
+    <a href="/estoque" class="nav-item"><span>🔫</span> Estoque</a>
+    <a href="/efetivo" class="nav-item active"><span>👮</span> Efetivo</a>
+  </div>
+</nav>
+
+<main class="main">
+  <div style="margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:800;text-transform:uppercase;">👮 Gestão do Efetivo</h2>
+      <p style="color:var(--muted);font-size:0.85rem;margin-top:4px;">Cadastro e controle dos policiais do batalhão</p>
+    </div>
+    <button class="btn btn-primary" onclick="abrirModalNovo()">＋ Novo Policial</button>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <input id="busca" type="text" placeholder="🔍  Buscar por matrícula ou nome de guerra..." style="max-width:340px;" oninput="filtrar()">
+      <div style="display:flex;gap:8px;">
+        <select id="filtro-posto" onchange="filtrar()" style="width:auto;">
+          <option value="">Todos os Postos</option>
+        </select>
+        <select id="filtro-status" onchange="filtrar()" style="width:auto;">
+          <option value="">Todos os Status</option>
+        </select>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Policial</th><th>Matrícula</th><th>Companhia / Pelotão</th><th>Status</th><th>Cautelas Ativas</th><th>Ações</th></tr>
+      </thead>
+      <tbody id="tabela-efetivo"></tbody>
+    </table>
+  </div>
+</main>
+
+<!-- MODAL POLICIAL -->
+<div id="modal-policial" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-pol-titulo">Novo Policial</div>
+    <input type="hidden" id="pol-id">
+    <div class="form-grid">
+      <div>
+        <label>Matrícula / RG PM *</label>
+        <input id="pol-matricula" placeholder="Ex: 123456" style="font-family:'JetBrains Mono',monospace;" required>
+      </div>
+      <div>
+        <label>Nome de Guerra *</label>
+        <input id="pol-nome-guerra" placeholder="Ex: SILVA" required>
+      </div>
+      <div style="grid-column:1/-1">
+        <label>Nome Completo</label>
+        <input id="pol-nome-completo" placeholder="Ex: João Marcos da Silva">
+      </div>
+      <div>
+        <label>Posto / Graduação *</label>
+        <select id="pol-posto"></select>
+      </div>
+      <div>
+        <label>Companhia / Pelotão</label>
+        <input id="pol-companhia" placeholder="Ex: 1ª CIA / 2º PEL">
+      </div>
+      <div>
+        <label>Status</label>
+        <select id="pol-status"></select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-policial')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarPolicial()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="/static/app.js"></script>
+<script>
+let todosPoliciais = [];
+
+// Popula selects
+POSTOS.forEach(p => {
+  document.getElementById("pol-posto").innerHTML += `<option>${p}</option>`;
+  document.getElementById("filtro-posto").innerHTML += `<option value="${p}">${p}</option>`;
+});
+STATUS_POLICIAL.forEach(s => {
+  document.getElementById("pol-status").innerHTML += `<option>${s}</option>`;
+  document.getElementById("filtro-status").innerHTML += `<option value="${s}">${s}</option>`;
+});
+
+async function carregarPoliciais() {
+  try {
+    todosPoliciais = await apiFetch("/policiais/");
+    // Busca cautelas ativas por policial
+    const cautelas = await apiFetch("/cautelas/?status=Ativa");
+    const cautelasMap = {};
+    cautelas.forEach(c => { cautelasMap[c.policial_id] = (cautelasMap[c.policial_id]||0)+1; });
+    renderTabela(todosPoliciais, cautelasMap);
+  } catch(e) { toast("Erro ao carregar efetivo: " + e.message, "erro"); }
+}
+
+function filtrar() {
+  const busca = document.getElementById("busca").value.toLowerCase();
+  const posto = document.getElementById("filtro-posto").value;
+  const status = document.getElementById("filtro-status").value;
+  carregarComFiltros(busca, posto, status);
+}
+
+async function carregarComFiltros(busca, posto, status) {
+  let lista = todosPoliciais.filter(p =>
+    (!busca || p.matricula.toLowerCase().includes(busca) || p.nome_guerra.toLowerCase().includes(busca) || (p.nome_completo||"").toLowerCase().includes(busca)) &&
+    (!posto || p.posto_graduacao === posto) &&
+    (!status || p.status === status)
+  );
+  const cautelas = await apiFetch("/cautelas/?status=Ativa").catch(()=>[]);
+  const cautelasMap = {};
+  cautelas.forEach(c => { cautelasMap[c.policial_id] = (cautelasMap[c.policial_id]||0)+1; });
+  renderTabela(lista, cautelasMap);
+}
+
+function renderTabela(lista, cautelasMap={}) {
+  const tb = document.getElementById("tabela-efetivo");
+  if (!lista.length) {
+    tb.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">Nenhum policial encontrado.</td></tr>`;
+    return;
+  }
+  tb.innerHTML = lista.map(p => {
+    const qtdCautelas = cautelasMap[p.id] || 0;
+    return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="avatar">👮</div>
+          <div>
+            <div><span class="posto-tag">${p.posto_graduacao}</span> <strong>${p.nome_guerra}</strong></div>
+            <div style="font-size:0.75rem;color:var(--muted);">${p.nome_completo||''}</div>
+          </div>
+        </div>
+      </td>
+      <td class="mono">${p.matricula}</td>
+      <td style="color:var(--muted);font-size:0.82rem;">${p.companhia_pelotao||'—'}</td>
+      <td>${badgeStatus(p.status)}</td>
+      <td>
+        ${qtdCautelas > 0
+          ? `<span class="badge badge-vermelho">● ${qtdCautelas} ativa(s)</span>`
+          : `<span class="badge badge-cinza">nenhuma</span>`}
+      </td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-ghost" style="padding:5px 10px;font-size:0.75rem;" onclick="editarPolicial(${p.id})">✏</button>
+          <button class="btn btn-danger" onclick="deletarPolicial(${p.id},'${p.nome_guerra.replace(/'/g,"\\'")}')">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function abrirModalNovo() {
+  document.getElementById("modal-pol-titulo").textContent = "Novo Policial";
+  document.getElementById("pol-id").value = "";
+  ["pol-matricula","pol-nome-guerra","pol-nome-completo","pol-companhia"].forEach(id => document.getElementById(id).value="");
+  document.getElementById("pol-posto").value = "Sd";
+  document.getElementById("pol-status").value = "Ativo";
+  abrirModal("modal-policial");
+}
+
+async function editarPolicial(id) {
+  try {
+    const p = await apiFetch(`/policiais/${id}`);
+    document.getElementById("modal-pol-titulo").textContent = "Editar Policial";
+    document.getElementById("pol-id").value = p.id;
+    document.getElementById("pol-matricula").value = p.matricula;
+    document.getElementById("pol-nome-guerra").value = p.nome_guerra;
+    document.getElementById("pol-nome-completo").value = p.nome_completo||"";
+    document.getElementById("pol-posto").value = p.posto_graduacao;
+    document.getElementById("pol-companhia").value = p.companhia_pelotao||"";
+    document.getElementById("pol-status").value = p.status;
+    abrirModal("modal-policial");
+  } catch(e) { toast("Erro: " + e.message, "erro"); }
+}
+
+async function salvarPolicial() {
+  const id = document.getElementById("pol-id").value;
+  const dados = {
+    matricula:         document.getElementById("pol-matricula").value.trim(),
+    nome_guerra:       document.getElementById("pol-nome-guerra").value.trim().toUpperCase(),
+    nome_completo:     document.getElementById("pol-nome-completo").value.trim()||null,
+    posto_graduacao:   document.getElementById("pol-posto").value,
+    companhia_pelotao: document.getElementById("pol-companhia").value.trim()||null,
+    status:            document.getElementById("pol-status").value,
+  };
+  if (!dados.matricula || !dados.nome_guerra) { toast("Matrícula e Nome de Guerra são obrigatórios.", "aviso"); return; }
+  try {
+    if (id) {
+      await apiFetch(`/policiais/${id}`, { method:"PUT", body:JSON.stringify(dados) });
+      toast("Policial atualizado.", "sucesso");
+    } else {
+      await apiFetch("/policiais/", { method:"POST", body:JSON.stringify(dados) });
+      toast("Policial cadastrado com sucesso.", "sucesso");
+    }
+    fecharModal("modal-policial");
+    carregarPoliciais();
+  } catch(e) { toast("Erro: " + e.message, "erro"); }
+}
+
+async function deletarPolicial(id, nome) {
+  if (!confirm(`Confirma a exclusão de "${nome}"?`)) return;
+  try {
+    await apiFetch(`/policiais/${id}`, { method:"DELETE" });
+    toast("Policial removido.", "sucesso");
+    carregarPoliciais();
+  } catch(e) { toast("Erro: " + e.message, "erro"); }
+}
+
+carregarPoliciais();
+</script>
+</body>
+</html>

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Almoxarifado PM — Painel de Cautela</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{--bg:#0b0f16;--surface:#111827;--border:#1f2d3d;--text:#e2e8f0;--muted:#64748b;--green:#10b981;--amber:#f59e0b;--red:#ef4444;--blue:#3b82f6;--accent:#0ea5e9;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;}
+  .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);min-height:100vh;position:fixed;top:0;left:0;z-index:10;display:flex;flex-direction:column;}
+  .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+  .sidebar-logo h1{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.3rem;letter-spacing:0.05em;color:white;line-height:1.2;}
+  .sidebar-logo p{font-size:0.7rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-top:4px;}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:12px 20px;color:var(--muted);font-size:0.9rem;font-weight:500;text-decoration:none;border-left:3px solid transparent;transition:all .15s;}
+  .nav-item:hover{background:rgba(14,165,233,0.08);color:var(--text);border-left-color:var(--accent);}
+  .nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(14,165,233,0.1);}
+  .main{margin-left:220px;padding:32px;min-height:100vh;}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:6px;font-size:0.85rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;}
+  .btn-primary{background:var(--accent);color:white;}
+  .btn-primary:hover{background:#0284c7;}
+  .btn-success{background:var(--green);color:white;}
+  .btn-success:hover{background:#059669;}
+  .btn-warning{background:var(--amber);color:#000;}
+  .btn-warning:hover{background:#d97706;}
+  .btn-danger{background:var(--red);color:white;font-size:0.75rem;padding:6px 12px;}
+  .btn-ghost{background:rgba(255,255,255,0.05);color:var(--text);border:1px solid var(--border);}
+  .btn-ghost:hover{background:rgba(255,255,255,0.1);}
+  input,select,textarea{background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:9px 12px;font-size:0.85rem;font-family:'Barlow',sans-serif;transition:border .15s;width:100%;}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);}
+  select option{background:#111827;}
+  label{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);font-weight:600;display:block;margin-bottom:5px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .card-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .card-title{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;}
+  table{width:100%;border-collapse:collapse;}
+  th{padding:10px 14px;text-align:left;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);border-bottom:1px solid var(--border);font-weight:600;}
+  td{padding:11px 14px;font-size:0.85rem;border-bottom:1px solid rgba(31,45,61,0.6);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:rgba(14,165,233,0.04);}
+  .mono{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--accent);}
+  .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;}
+  .badge-verde{background:rgba(16,185,129,0.15);color:#10b981;}
+  .badge-azul{background:rgba(59,130,246,0.15);color:#60a5fa;}
+  .badge-amarelo{background:rgba(245,158,11,0.15);color:#f59e0b;}
+  .badge-vermelho{background:rgba(239,68,68,0.15);color:#ef4444;}
+  .badge-cinza{background:rgba(100,116,139,0.15);color:#94a3b8;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:50;display:flex;align-items:center;justify-content:center;}
+  .modal-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;padding:28px;}
+  .modal-title{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;text-transform:uppercase;margin-bottom:20px;}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
+  .form-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));}
+  #toast-container{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;}
+  .toast-item{transition:opacity .4s;}
+  /* Painel de nova cautela */
+  .nova-cautela-panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:24px;margin-bottom:24px;}
+  .nova-cautela-panel h3{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:700;text-transform:uppercase;margin-bottom:18px;color:var(--accent);}
+  .preview-card{background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.25);border-radius:6px;padding:12px 16px;margin-top:8px;display:none;}
+  .preview-card.visible{display:block;}
+  .preview-label{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);}
+  .preview-value{font-size:1rem;font-weight:600;color:white;margin-top:2px;}
+  .row-atraso td{background:rgba(239,68,68,0.05);}
+  .tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:0;}
+  .tab{padding:12px 20px;font-size:0.85rem;font-weight:600;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .tab-content{display:none;}
+  .tab-content.active{display:block;}
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div style="font-size:2rem;margin-bottom:8px;">🚔</div>
+    <h1>ALMOXARIFADO<br>ARMAMENTOS</h1>
+    <p>Sistema de Gestão PM</p>
+  </div>
+  <div style="padding:16px 0;">
+    <a href="/" class="nav-item"><span>📊</span> Dashboard</a>
+    <a href="/painel-cautela" class="nav-item active"><span>📋</span> Cautelas</a>
+    <a href="/estoque" class="nav-item"><span>🔫</span> Estoque</a>
+    <a href="/efetivo" class="nav-item"><span>👮</span> Efetivo</a>
+  </div>
+</nav>
+
+<main class="main">
+  <div style="margin-bottom:24px;">
+    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:800;text-transform:uppercase;">📋 Painel de Cautela</h2>
+    <p style="color:var(--muted);font-size:0.85rem;margin-top:4px;">Registre saídas e devoluções de material — compatível com leitor de código de barras</p>
+  </div>
+
+  <!-- PAINEL DE NOVA CAUTELA -->
+  <div class="nova-cautela-panel">
+    <h3>⬡ Registrar Nova Saída de Material</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <!-- Coluna Policial -->
+      <div>
+        <label>Matrícula do Policial *</label>
+        <div style="display:flex;gap:8px;">
+          <input id="nc-matricula" placeholder="Digite ou bipe o cartão..." style="font-family:'JetBrains Mono',monospace;" onkeydown="if(event.key==='Enter')buscarPolicial()">
+          <button class="btn btn-ghost" onclick="buscarPolicial()" style="white-space:nowrap;">🔍</button>
+        </div>
+        <div class="preview-card" id="preview-policial">
+          <div class="preview-label">Policial Identificado</div>
+          <div class="preview-value" id="pv-nome">—</div>
+          <div style="font-size:0.8rem;color:var(--muted);margin-top:4px;" id="pv-detalhe">—</div>
+        </div>
+      </div>
+      <!-- Coluna Item -->
+      <div>
+        <label>Número de Série do Item *</label>
+        <div style="display:flex;gap:8px;">
+          <input id="nc-serie" placeholder="Digite ou bipe o armamento..." style="font-family:'JetBrains Mono',monospace;" onkeydown="if(event.key==='Enter')buscarItem()">
+          <button class="btn btn-ghost" onclick="buscarItem()" style="white-space:nowrap;">🔍</button>
+        </div>
+        <div class="preview-card" id="preview-item">
+          <div class="preview-label">Item Localizado</div>
+          <div class="preview-value" id="pv-item-nome">—</div>
+          <div style="font-size:0.8rem;color:var(--muted);margin-top:4px;" id="pv-item-detalhe">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:16px;">
+      <div>
+        <label>Responsável pela Entrega *</label>
+        <input id="nc-responsavel" placeholder="Nome do almoxarife">
+      </div>
+      <div>
+        <label>Quantidade</label>
+        <input id="nc-quantidade" type="number" min="1" value="1">
+      </div>
+      <div>
+        <label>Previsão de Devolução</label>
+        <input id="nc-devolucao" type="datetime-local">
+      </div>
+      <div style="grid-column:1/-1">
+        <label>Observações</label>
+        <input id="nc-obs" placeholder="Ex: Entregue com coldre... (opcional)">
+      </div>
+    </div>
+
+    <input type="hidden" id="nc-policial-id">
+    <input type="hidden" id="nc-item-id">
+
+    <div style="display:flex;justify-content:flex-end;">
+      <button class="btn btn-success" onclick="registrarCautela()" style="font-size:1rem;padding:12px 28px;">
+        ✔ REGISTRAR SAÍDA DE MATERIAL
+      </button>
+    </div>
+  </div>
+
+  <!-- LISTA DE CAUTELAS -->
+  <div class="card">
+    <div class="card-header">
+      <div class="tabs" style="border:none;margin:0;flex:1;">
+        <div class="tab active" onclick="mudarAba('ativas',this)">🔴 Ativas</div>
+        <div class="tab" onclick="mudarAba('todas',this)">📋 Histórico Completo</div>
+        <div class="tab" onclick="mudarAba('atraso',this)">⚠ Em Atraso</div>
+      </div>
+      <input id="busca-cautela" type="text" placeholder="Filtrar..." style="max-width:200px;" oninput="filtrarCautelas()">
+    </div>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Policial</th><th>Material</th><th>Série</th><th>Qtd</th><th>Saída</th><th>Prev. Dev.</th><th>Devolução</th><th>Status</th><th>Ação</th></tr>
+      </thead>
+      <tbody id="tabela-cautelas"></tbody>
+    </table>
+  </div>
+</main>
+
+<!-- MODAL DEVOLUÇÃO -->
+<div id="modal-devolucao" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-title">📦 Registrar Devolução</div>
+    <input type="hidden" id="dev-cautela-id">
+    <div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:6px;padding:14px;margin-bottom:20px;">
+      <div id="dev-info" style="font-size:0.9rem;line-height:1.7;"></div>
+    </div>
+    <div class="form-grid" style="grid-template-columns:1fr;">
+      <div>
+        <label>Data/Hora da Devolução</label>
+        <input id="dev-data" type="datetime-local">
+      </div>
+      <div>
+        <label>Observações sobre a devolução</label>
+        <textarea id="dev-obs" rows="3" placeholder="Ex: Devolvido com amassado no cabo. Rádio com bateria descarregada."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-devolucao')">Cancelar</button>
+      <button class="btn btn-success" onclick="confirmarDevolucao()">✔ Confirmar Devolução</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="/static/app.js"></script>
+<script>
+let todasCautelas = [];
+let abaAtiva = 'ativas';
+
+// Busca policial por matrícula
+async function buscarPolicial() {
+  const mat = document.getElementById("nc-matricula").value.trim();
+  if (!mat) return;
+  try {
+    const p = await apiFetch(`/policiais/matricula/${encodeURIComponent(mat)}`);
+    document.getElementById("nc-policial-id").value = p.id;
+    document.getElementById("pv-nome").textContent = `${p.posto_graduacao} ${p.nome_guerra}`;
+    document.getElementById("pv-detalhe").textContent = `Matrícula: ${p.matricula} — ${p.companhia_pelotao||''} — Status: ${p.status}`;
+    const pcard = document.getElementById("preview-policial");
+    pcard.classList.add("visible");
+    pcard.style.borderColor = p.status === "Ativo" ? "rgba(16,185,129,0.4)" : "rgba(245,158,11,0.4)";
+    // Foca no próximo campo
+    document.getElementById("nc-serie").focus();
+  } catch(e) {
+    document.getElementById("nc-policial-id").value = "";
+    document.getElementById("preview-policial").classList.remove("visible");
+    toast("Policial não encontrado: " + e.message, "erro");
+  }
+}
+
+// Busca item por número de série
+async function buscarItem() {
+  const serie = document.getElementById("nc-serie").value.trim();
+  if (!serie) return;
+  try {
+    const i = await apiFetch(`/itens/serie/${encodeURIComponent(serie)}`);
+    document.getElementById("nc-item-id").value = i.id;
+    document.getElementById("pv-item-nome").textContent = i.descricao;
+    document.getElementById("pv-item-detalhe").textContent = `Tipo: ${i.tipo_material} | Condição: ${i.condicao} | Disponível: ${i.quantidade_disponivel}`;
+    const icard = document.getElementById("preview-item");
+    icard.classList.add("visible");
+    icard.style.borderColor = i.quantidade_disponivel > 0 ? "rgba(16,185,129,0.4)" : "rgba(239,68,68,0.4)";
+    document.getElementById("nc-responsavel").focus();
+  } catch(e) {
+    document.getElementById("nc-item-id").value = "";
+    document.getElementById("preview-item").classList.remove("visible");
+    toast("Item não encontrado: " + e.message, "erro");
+  }
+}
+
+async function registrarCautela() {
+  const policialId = document.getElementById("nc-policial-id").value;
+  const itemId     = document.getElementById("nc-item-id").value;
+  const responsavel = document.getElementById("nc-responsavel").value.trim();
+  const quantidade = parseInt(document.getElementById("nc-quantidade").value) || 1;
+  const devPrev    = document.getElementById("nc-devolucao").value;
+  const obs        = document.getElementById("nc-obs").value.trim();
+
+  if (!policialId) { toast("Identifique o policial primeiro.", "aviso"); return; }
+  if (!itemId)     { toast("Selecione o item primeiro.", "aviso"); return; }
+  if (!responsavel){ toast("Informe o nome do responsável pela entrega.", "aviso"); return; }
+
+  const dados = {
+    policial_id:             parseInt(policialId),
+    item_id:                 parseInt(itemId),
+    quantidade,
+    responsavel_entrega:     responsavel,
+    data_devolucao_prevista: devPrev ? new Date(devPrev).toISOString() : null,
+    observacoes:             obs || null,
+  };
+  try {
+    await apiFetch("/cautelas/", { method:"POST", body:JSON.stringify(dados) });
+    toast("✔ Cautela registrada com sucesso!", "sucesso");
+    // Limpa os campos
+    ["nc-matricula","nc-serie","nc-responsavel","nc-obs","nc-devolucao"].forEach(id=>document.getElementById(id).value="");
+    ["nc-policial-id","nc-item-id"].forEach(id=>document.getElementById(id).value="");
+    ["preview-policial","preview-item"].forEach(id=>document.getElementById(id).classList.remove("visible"));
+    document.getElementById("nc-quantidade").value = 1;
+    document.getElementById("nc-matricula").focus();
+    carregarCautelas();
+  } catch(e) { toast("Erro ao registrar cautela: " + e.message, "erro"); }
+}
+
+async function carregarCautelas() {
+  try {
+    if (abaAtiva === 'atraso') {
+      todasCautelas = await apiFetch("/cautelas/em-atraso");
+    } else if (abaAtiva === 'ativas') {
+      todasCautelas = await apiFetch("/cautelas/?status=Ativa");
+    } else {
+      todasCautelas = await apiFetch("/cautelas/");
+    }
+    filtrarCautelas();
+  } catch(e) { toast("Erro ao carregar cautelas.", "erro"); }
+}
+
+function filtrarCautelas() {
+  const busca = document.getElementById("busca-cautela").value.toLowerCase();
+  const lista = busca ? todasCautelas.filter(c =>
+    (c.policial?.nome_guerra||"").toLowerCase().includes(busca) ||
+    (c.policial?.matricula||"").toLowerCase().includes(busca) ||
+    (c.item?.descricao||"").toLowerCase().includes(busca) ||
+    (c.item?.numero_serie||"").toLowerCase().includes(busca)
+  ) : todasCautelas;
+  renderTabelaCautelas(lista);
+}
+
+function renderTabelaCautelas(lista) {
+  const tb = document.getElementById("tabela-cautelas");
+  if (!lista.length) {
+    tb.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px;">Nenhuma cautela encontrada.</td></tr>`;
+    return;
+  }
+  tb.innerHTML = lista.map(c => {
+    const atrasado = isAtrasada(c);
+    return `<tr class="${atrasado ? 'row-atraso' : ''}">
+      <td style="font-size:0.75rem;color:var(--muted);">#${c.id}</td>
+      <td>
+        <strong>${c.policial?.posto_graduacao} ${c.policial?.nome_guerra}</strong>
+        <br><small class="mono">${c.policial?.matricula}</small>
+      </td>
+      <td>${c.item?.descricao}</td>
+      <td class="mono">${c.item?.numero_serie||'—'}</td>
+      <td style="text-align:center;">${c.quantidade}</td>
+      <td style="font-size:0.8rem;">${fmtData(c.data_retirada)}</td>
+      <td style="font-size:0.8rem;color:${atrasado?'var(--red)':'var(--amber)'}">
+        ${c.data_devolucao_prevista ? fmtDataCurta(c.data_devolucao_prevista) : '—'}
+        ${atrasado ? ' ⚠' : ''}
+      </td>
+      <td style="font-size:0.8rem;color:var(--green);">${c.data_devolucao_real ? fmtData(c.data_devolucao_real) : '—'}</td>
+      <td>${badgeCautela(c.status)}</td>
+      <td>
+        ${c.status === 'Ativa'
+          ? `<button class="btn btn-warning" style="font-size:0.75rem;padding:6px 12px;" onclick="abrirDevolucao(${c.id})">↩ Devolver</button>`
+          : `<span style="color:var(--muted);font-size:0.75rem;">—</span>`}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function mudarAba(aba, el) {
+  abaAtiva = aba;
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+  carregarCautelas();
+}
+
+async function abrirDevolucao(cautelaId) {
+  try {
+    const c = await apiFetch(`/cautelas/${cautelaId}`);
+    document.getElementById("dev-cautela-id").value = cautelaId;
+    document.getElementById("dev-info").innerHTML = `
+      <div><strong>Policial:</strong> ${c.policial?.posto_graduacao} ${c.policial?.nome_guerra} (${c.policial?.matricula})</div>
+      <div><strong>Material:</strong> ${c.item?.descricao}</div>
+      <div><strong>Nº Série:</strong> <span class="mono">${c.item?.numero_serie||'—'}</span></div>
+      <div><strong>Data de Saída:</strong> ${fmtData(c.data_retirada)}</div>
+    `;
+    // Define data/hora atual como padrão
+    const agora = new Date();
+    agora.setMinutes(agora.getMinutes() - agora.getTimezoneOffset());
+    document.getElementById("dev-data").value = agora.toISOString().slice(0,16);
+    document.getElementById("dev-obs").value = "";
+    abrirModal("modal-devolucao");
+  } catch(e) { toast("Erro: " + e.message, "erro"); }
+}
+
+async function confirmarDevolucao() {
+  const id   = document.getElementById("dev-cautela-id").value;
+  const data = document.getElementById("dev-data").value;
+  const obs  = document.getElementById("dev-obs").value.trim();
+  try {
+    await apiFetch(`/cautelas/${id}/devolver`, {
+      method: "PUT",
+      body: JSON.stringify({
+        data_devolucao_real: data ? new Date(data).toISOString() : null,
+        observacoes: obs || null
+      })
+    });
+    toast("✔ Devolução registrada com sucesso!", "sucesso");
+    fecharModal("modal-devolucao");
+    carregarCautelas();
+  } catch(e) { toast("Erro ao registrar devolução: " + e.message, "erro"); }
+}
+
+// Inicializa
+carregarCautelas();
+document.getElementById("nc-matricula").focus();
+</script>
+</body>
+</html>
