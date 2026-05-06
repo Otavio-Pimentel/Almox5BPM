@@ -56,6 +56,11 @@
 </style>
 </head>
 <body>
+<script src="/static/app.js?v=2"></script>
+<script>
+  // Isso garante que se não houver token, ele nem carrega a página e vai pro login
+  requireAuth(); 
+</script>
 <nav class="sidebar">
   <div class="sidebar-logo">
     <div style="font-size:2rem;margin-bottom:8px;">🚔</div>
@@ -139,7 +144,6 @@
 </div>
 
 <div id="toast-container"></div>
-<script src="/static/app.js"></script>
 <script>
 let todosPoliciais = [];
 

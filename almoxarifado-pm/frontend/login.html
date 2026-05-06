@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Almoxarifado PM — Acesso</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{--bg:#0b0f16;--surface:#111827;--border:#1f2d3d;--accent:#0ea5e9;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:#e2e8f0;font-family:'Barlow',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:40px 36px;width:100%;max-width:400px;}
+  input{background:rgba(255,255,255,0.05);border:1px solid var(--border);color:#e2e8f0;border-radius:6px;padding:10px 14px;font-size:0.9rem;width:100%;transition:border .15s;}
+  input:focus{outline:none;border-color:var(--accent);}
+  label{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;display:block;margin-bottom:6px;}
+  .btn{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:6px;font-size:0.95rem;font-weight:600;cursor:pointer;transition:background .15s;margin-top:8px;}
+  .btn:hover{background:#0284c7;}
+  .btn:disabled{opacity:0.6;cursor:not-allowed;}
+  .error{background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;border-radius:6px;padding:10px 14px;font-size:0.85rem;margin-top:12px;display:none;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div style="text-align:center;margin-bottom:28px;">
+    <div style="font-size:2.5rem;margin-bottom:10px;">🚔</div>
+    <h1 style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;">Almoxarifado PM</h1>
+    <p style="color:#64748b;font-size:0.8rem;margin-top:4px;">Sistema de Gestão de Armamentos</p>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div>
+      <label>Usuário</label>
+      <input id="username" type="text" placeholder="Digite seu usuário" autocomplete="username" autofocus>
+    </div>
+    <div>
+      <label>Senha</label>
+      <input id="password" type="password" placeholder="Digite sua senha" autocomplete="current-password">
+    </div>
+  </div>
+
+  <div id="error-msg" class="error"></div>
+  <button class="btn" id="btn-login" onclick="fazerLogin()">Entrar</button>
+
+  <p style="text-align:center;font-size:0.75rem;color:#475569;margin-top:20px;">
+    Acesso restrito ao efetivo autorizado.
+  </p>
+</div>
+
+<script>
+const API = "http://localhost:8000";
+
+async function fazerLogin() {
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value;
+  const btn      = document.getElementById("btn-login");
+  const errDiv   = document.getElementById("error-msg");
+
+  if (!username || !password) {
+    mostrarErro("Preencha usuário e senha.");
+    return;
+  }
+
+  btn.disabled    = true;
+  btn.textContent = "Autenticando...";
+  errDiv.style.display = "none";
+
+  try {
+    const body = new URLSearchParams({ username, password });
+    const res  = await fetch(`${API}/auth/token`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body:    body.toString(),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Usuário ou senha incorretos.");
+    }
+
+    const data = await res.json();
+
+    const expiresAt = Date.now() + (data.expires_in * 1000);
+    sessionStorage.setItem("pm_token", data.access_token);
+    sessionStorage.setItem("pm_expires_at", expiresAt);
+
+
+    window.location.replace("/");
+
+  } catch (e) {
+    mostrarErro(e.message);
+    btn.disabled    = false;
+    btn.textContent = "Entrar";
+  }
+}
+
+function mostrarErro(msg) {
+  const d = document.getElementById("error-msg");
+  d.textContent    = "⚠ " + msg;
+  d.style.display  = "block";
+}
+
+// Redireciona se já houver sessão válida
+const token     = localStorage.getItem("pm_token");
+const expiresAt = parseInt(localStorage.getItem("pm_expires_at") || "0");
+if (token && Date.now() < expiresAt) {
+  window.location.href = "/";
+}
+
+// Enter no campo de senha
+document.getElementById("password").addEventListener("keydown", e => {
+  if (e.key === "Enter") fazerLogin();
+});
+</script>
+</body>
+</html>

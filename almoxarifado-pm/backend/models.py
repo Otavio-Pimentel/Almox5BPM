@@ -105,3 +105,20 @@ class Cautela(Base):
     # Relacionamentos
     policial = relationship("Policial", back_populates="cautelas")
     item     = relationship("Item", back_populates="cautelas")
+
+class Auditoria(Base):
+    __tablename__ = "auditoria"
+
+    id                = Column(Integer, primary_key=True, index=True)
+    usuario_id        = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    acao              = Column(String(50), nullable=False, index=True)
+    tabela_afetada    = Column(String(50), nullable=False, index=True)
+    registro_id       = Column(Integer, nullable=False, index=True)
+    dados_anteriores  = Column(Text, nullable=True)  
+    dados_novos       = Column(Text, nullable=True)  
+    ip_address        = Column(String(45), nullable=True)  
+    user_agent        = Column(String(255), nullable=True)
+    data_hora         = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    class Config:
+        from_attributes = True

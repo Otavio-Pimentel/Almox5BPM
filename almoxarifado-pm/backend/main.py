@@ -1,5 +1,3 @@
-# main.py - Ponto de entrada do servidor FastAPI
-# Sistema de Almoxarifado / Reserva de Armamentos - PMMG
 import os
 import sys
 
@@ -12,11 +10,17 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
+from sqlalchemy import and_
 
+# Importações de Banco e Modelos
 from database import engine, Base, get_db
 from models import Policial, Item, Cautela
 from schemas import DashboardStats
-from routers import policiais, itens, cautelas
+from routers import policiais, itens, cautelas, auth, usuarios
+
+# IMPORTAÇÃO DA BLINDAGEM DE SEGURANÇA (Obrigatório)
+from security import get_current_user
+from usuarios import Usuario, criar_usuario_inicial
 
 # ─────────────────────────────────────────────────────────────
 # CRIAÇÃO DAS TABELAS NO BANCO DE DADOS
@@ -33,25 +37,27 @@ app = FastAPI(
 )
 
 # ─────────────────────────────────────────────────────────────
-# CORS - Permite o frontend (HTML) consumir a API
+# CORS - Permite o frontend consumir a API
 # ─────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],      # Em produção, restringir ao IP local
+    allow_origins=["*"],      # Em produção, trocar pelo IP da rede do Batalhão
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # ─────────────────────────────────────────────────────────────
-# REGISTRA OS ROTEADORES
+# REGISTRA OS ROTEADORES SEGUROS
 # ─────────────────────────────────────────────────────────────
+app.include_router(auth.router)
 app.include_router(policiais.router)
 app.include_router(itens.router)
 app.include_router(cautelas.router)
+app.include_router(usuarios.router)
 
 # ─────────────────────────────────────────────────────────────
-# SERVE OS ARQUIVOS ESTÁTICOS DO FRONTEND
+# SERVE OS ARQUIVOS ESTÁTICOS DO FRONTEND (Casca da Aplicação)
 # ─────────────────────────────────────────────────────────────
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
 if os.path.exists(FRONTEND_DIR):
@@ -73,13 +79,19 @@ if os.path.exists(FRONTEND_DIR):
     def serve_cautela():
         return FileResponse(os.path.join(FRONTEND_DIR, "cautelas.html"))
 
+    @app.get("/login", include_in_schema=False)
+    def serve_login():
+        return FileResponse(os.path.join(FRONTEND_DIR, "login.html"))
 
 # ─────────────────────────────────────────────────────────────
-# ROTA DO DASHBOARD - ESTATÍSTICAS
+# ROTA DO DASHBOARD - ESTATÍSTICAS (AGORA BLINDADA)
 # ─────────────────────────────────────────────────────────────
 @app.get("/dashboard/stats", response_model=DashboardStats, tags=["Dashboard"])
-def get_dashboard_stats(db: Session = Depends(get_db)):
-    """Retorna as estatísticas gerais para o painel principal."""
+def get_dashboard_stats(
+    db: Session = Depends(get_db),
+    _user: Usuario = Depends(get_current_user) # <-- TRAVA DE SEGURANÇA INJETADA AQUI
+):
+    """Retorna as estatísticas gerais para o painel. Se não tiver token JWT, devolve Erro 401."""
     agora = datetime.now(timezone.utc)
 
     total_policiais   = db.query(Policial).count()
@@ -90,8 +102,6 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
     itens_manutencao  = db.query(Item).filter(Item.condicao == "Precisa de Manutenção").count()
     itens_inservíveis = db.query(Item).filter(Item.condicao == "Inservível").count()
 
-    # Cautelas em atraso: ativas com data prevista no passado
-    from sqlalchemy import and_
     cautelas_atraso = db.query(Cautela).filter(
         and_(
             Cautela.status == "Ativa",
@@ -111,10 +121,16 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
         itens_inservíveis=itens_inservíveis,
     )
 
+# ─────────────────────────────────────────────────────────────
+# PONTO DE ENTRADA DIRETO
+# ─────────────────────────────────────────────────────────────
+from usuarios import criar_usuario_inicial
 
-# ─────────────────────────────────────────────────────────────
-# PONTO DE ENTRADA DIRETO (python main.py)
-# ─────────────────────────────────────────────────────────────
+@app.on_event("startup")
+def startup_event():
+    # Cria o usuário admin/admin123 se o banco estiver vazio
+    db = next(get_db())
+    criar_usuario_inicial(db)
 if __name__ == "__main__":
     import uvicorn
     print("=" * 55)

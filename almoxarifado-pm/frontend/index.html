@@ -85,7 +85,11 @@
 </style>
 </head>
 <body>
-
+<script src="/static/app.js?v=2"></script>
+<script>
+  // Isso garante que se não houver token, ele nem carrega a página e vai pro login
+  requireAuth(); 
+</script>
 <!-- SIDEBAR -->
 <nav class="sidebar">
   <div class="sidebar-logo">
@@ -157,7 +161,6 @@
 
 <div id="toast-container"></div>
 
-<script src="/static/app.js"></script>
 <script>
 // Relógio
 function atualizarRelogio() {
