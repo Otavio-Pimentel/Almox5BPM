@@ -118,42 +118,38 @@ def devolver_item(
     dados: CautelaDevolver, 
     request: Request, 
     db: Session = Depends(get_db), 
-    _operador: Usuario = Depends(require_operador) # <-- TRAVA DE ACESSO
+    _operador: Usuario = Depends(require_operador)
 ):
-    """Registra a devolução de um item utilizando atualização atômica e whitelist de status."""
+    """Registra a devolução de um item atualizando a cautela e o stock."""
     cautela = db.query(Cautela).filter(Cautela.id == cautela_id).first()
     if not cautela: 
         raise HTTPException(status_code=404, detail="Cautela não encontrada.")
     
-    # 🛡️ WHITELIST TÁTICA: Bloqueia devolução de itens cancelados ou extraviados
+
     if cautela.status != "Ativa":
         raise HTTPException(status_code=409, detail=f"Cautela com status '{cautela.status}' não pode ser devolvida.")
     
-    # Captura foto do estado atual para a auditoria
     dados_antes = extrair_dados_do_objeto(cautela, ["status", "data_devolucao_real", "observacoes"])
     
     agora = datetime.now(timezone.utc)
     data_dev = dados.data_devolucao_real or agora
     
-    # 🛡️ ATUALIZAÇÃO ATÔMICA DA CAUTELA (Previne falhas de concorrência)
-    db.execute(
-        update(Cautela).where(and_(Cautela.id == cautela_id, Cautela.status == "Ativa"))
-        .values(status="Devolvida", data_devolucao_real=data_dev, observacoes=(
-            ((cautela.observacoes or "") + f" | Devolução: {dados.observacoes}").strip(" |") if dados.observacoes else cautela.observacoes
-        ))
-    )
+    cautela.status = "Devolvida"
+    cautela.data_devolucao_real = data_dev
+    if dados.observacoes:
+        cautela.observacoes = ((cautela.observacoes or "") + f" | Devolução: {dados.observacoes}").strip(" |")
     
-    # 🛡️ ATUALIZAÇÃO ATÔMICA DO ESTOQUE
-    db.execute(
-        update(Item).where(Item.id == cautela.item_id)
-        .values(quantidade_disponivel=min(Item.quantidade_disponivel + cautela.quantidade, Item.quantidade_total))
-    )
+    item = db.query(Item).filter(Item.id == cautela.item_id).first()
+    if item:
+        nova_qtd = item.quantidade_disponivel + cautela.quantidade
+        item.quantidade_disponivel = min(nova_qtd, item.quantidade_total)
+        
+
     db.commit()
+    db.refresh(cautela)
     
-    cautela_atualizada = db.query(Cautela).filter(Cautela.id == cautela_id).first()
-    dados_depois = extrair_dados_do_objeto(cautela_atualizada, ["status", "data_devolucao_real", "observacoes"])
+    dados_depois = extrair_dados_do_objeto(cautela, ["status", "data_devolucao_real", "observacoes"])
     
-    # 📝 REGISTRO DE AUDITORIA FORENSE INEGOCIÁVEL
     registrar_auditoria(
         db=db, usuario_id=_operador.id, acao="devolver_item", tabela_afetada="cautelas", registro_id=cautela_id,
         dados_anteriores=dados_antes, dados_novos=dados_depois,

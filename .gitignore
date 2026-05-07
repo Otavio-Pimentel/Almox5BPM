@@ -1,0 +1,36 @@
+# Bancos de dados locais
+*.db
+*.sqlite3
+almoxarifado.db
+db.sqlite3
+
+# Variáveis de ambiente / segredos
+.env
+.env.*
+!.env.example
+
+# Ambientes virtuais
+venv/
+env/
+.venv/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Build / empacotamento Python
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# Arquivos de IDE
+.vscode/
+.idea/
+
+# Arquivos do Django
+staticfiles/
+media/
