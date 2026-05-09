@@ -181,26 +181,29 @@ def atualizar_item(item_id: int, dados: ItemUpdate, db: Session = Depends(get_db
 
 
 @router.delete("/{item_id}", status_code=204)
-def deletar_item(item_id: int, db: Session = Depends(get_db)):
+def deletar_item(
+    item_id: int, 
+    db: Session = Depends(get_db),
+    _operador: Usuario = Depends(require_admin)
+):
     """
     Remove um item do sistema.
-    ATENÇÃO: Não permite exclusão se houver cautelas ativas para o item.
+    ATENÇÃO: Bloqueia a exclusão absoluta se o item tiver QUALQUER histórico.
     """
     from models import Cautela
     item = db.query(Item).filter(Item.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Item não encontrado.")
 
-    cautelas_ativas = db.query(Cautela).filter(
-        Cautela.item_id == item_id,
-        Cautela.status == "Ativa"
-    ).count()
+  
+    historico_cautelas = db.query(Cautela).filter(Cautela.item_id == item_id).count()
 
-    if cautelas_ativas > 0:
+    if historico_cautelas > 0:
         raise HTTPException(
             status_code=400,
-            detail=f"Não é possível excluir: item possui {cautelas_ativas} cautela(s) ativa(s)."
+            detail=f"Exclusão bloqueada: Este item possui {historico_cautelas} registro(s) no histórico. Edite o item e mude a condição para 'Inservível'."
         )
 
+  
     db.delete(item)
     db.commit()
