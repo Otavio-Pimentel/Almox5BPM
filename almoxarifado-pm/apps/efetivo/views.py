@@ -44,7 +44,6 @@ class PolicialViewSet(AuditoriaMixin, RBACMixin, viewsets.ModelViewSet):
     serializer_class = PolicialSerializer
     permission_classes = [IsAuthenticated]
     
-    # Filtros, busca e ordenação
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -53,7 +52,7 @@ class PolicialViewSet(AuditoriaMixin, RBACMixin, viewsets.ModelViewSet):
     filterset_fields = ['status', 'posto_graduacao']
     search_fields = ['matricula', 'nome_guerra', 'nome_completo']
     ordering_fields = ['matricula', 'nome_guerra', 'posto_graduacao', 'criado_em']
-    ordering = ['nome_guerra']  # Padrão
+    ordering = ['nome_guerra']
     
     def get_queryset(self):
         """
@@ -72,7 +71,6 @@ class PolicialViewSet(AuditoriaMixin, RBACMixin, viewsets.ModelViewSet):
         """
         policial = self.get_object()
         
-        # Impede deleção se tem cautelas ativas
         if policial.cautelas.filter(status='Ativa').exists():
             return Response(
                 {
@@ -82,11 +80,9 @@ class PolicialViewSet(AuditoriaMixin, RBACMixin, viewsets.ModelViewSet):
                 status=status.HTTP_409_CONFLICT
             )
         
-        # Soft delete: marca como Inativo
         policial.status = Policial.Status.INATIVO
         policial.save()
         
-        # Registra auditoria de exclusão
         self.registrar_auditoria(
             'policial',
             policial,
@@ -122,3 +118,34 @@ class PolicialViewSet(AuditoriaMixin, RBACMixin, viewsets.ModelViewSet):
         from apps.cautelas.serializers import CautelaSerializer
         serializer = CautelaSerializer(cautelas, many=True)
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def cautelas_ativas(self, request, pk=None):
+        """
+        GET /policiais/{id}/cautelas_ativas/
+        
+        Retorna cautelas ativas do policial.
+        """
+        policial = self.get_object()
+        cautelas = policial.cautelas.filter(status='Ativa').order_by('-data_retirada')
+        
+        from apps.cautelas.serializers import CautelaSerializer
+        serializer = CautelaSerializer(cautelas, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='matricula/(?P<matricula>[^/.]+)')
+    def buscar_por_matricula(self, request, matricula=None):
+        """
+        GET /api/policiais/matricula/12345/
+        
+        Custom endpoint para encontrar policial pela matrícula (Leitor de Código de Barras).
+        """
+        try:
+            policial = self.get_queryset().get(matricula=matricula)
+            serializer = self.get_serializer(policial)
+            return Response(serializer.data)
+        except Policial.DoesNotExist:
+            return Response(
+                {'detail': f'Policial com matrícula "{matricula}" não encontrado.'},
+                status=status.HTTP_404_NOT_FOUND
+            )

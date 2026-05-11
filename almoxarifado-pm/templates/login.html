@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -42,19 +43,26 @@
   <div id="error-msg" class="error"></div>
   <button class="btn" id="btn-login" onclick="fazerLogin()">Entrar</button>
 
+  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+    <input type="checkbox" id="lembrar-me" style="width: auto; cursor: pointer;">
+    <label for="lembrar-me" style="font-size: 0.85rem; color: var(--muted); cursor: pointer; text-transform: none; margin: 0;">
+        Manter-me conectado
+    </label>
+</div>
+
   <p style="text-align:center;font-size:0.75rem;color:#475569;margin-top:20px;">
     Acesso restrito ao efetivo autorizado.
   </p>
 </div>
 
 <script>
-const API = "http://localhost:8000";
-
 async function fazerLogin() {
   const username = document.getElementById("username").value.trim();
   const password = document.getElementById("password").value;
   const btn      = document.getElementById("btn-login");
   const errDiv   = document.getElementById("error-msg");
+  // 👇 Olha a mágica do botão aqui:
+  const lembrar  = document.getElementById("lembrar-me").checked; 
 
   if (!username || !password) {
     mostrarErro("Preencha usuário e senha.");
@@ -66,11 +74,10 @@ async function fazerLogin() {
   errDiv.style.display = "none";
 
   try {
-    const body = new URLSearchParams({ username, password });
-    const res  = await fetch(`${API}/auth/token`, {
-      method:  "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body:    body.toString(),
+    const res = await fetch("/auth/token/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
     });
 
     if (!res.ok) {
@@ -79,11 +86,16 @@ async function fazerLogin() {
     }
 
     const data = await res.json();
+    const expiresAt = Date.now() + (8 * 60 * 60 * 1000); // 8 horas
 
-    const expiresAt = Date.now() + (data.expires_in * 1000);
-    sessionStorage.setItem("pm_token", data.access_token);
-    sessionStorage.setItem("pm_expires_at", expiresAt);
-
+    // 👇 SEPARAÇÃO TÁTICA DAS MEMÓRIAS
+    if (lembrar) {
+      localStorage.setItem("pm_token", data.access);
+      localStorage.setItem("pm_expires_at", expiresAt);
+    } else {
+      sessionStorage.setItem("pm_token", data.access);
+      sessionStorage.setItem("pm_expires_at", expiresAt);
+    }
 
     window.location.replace("/");
 
@@ -100,14 +112,13 @@ function mostrarErro(msg) {
   d.style.display  = "block";
 }
 
-// Redireciona se já houver sessão válida
-const token     = localStorage.getItem("pm_token");
-const expiresAt = parseInt(localStorage.getItem("pm_expires_at") || "0");
+// 👇 VERIFICAÇÃO AUTOMÁTICA NAS DUAS MEMÓRIAS AO ABRIR A TELA
+const token     = sessionStorage.getItem("pm_token") || localStorage.getItem("pm_token");
+const expiresAt = parseInt(sessionStorage.getItem("pm_expires_at") || localStorage.getItem("pm_expires_at") || "0");
 if (token && Date.now() < expiresAt) {
   window.location.href = "/";
 }
 
-// Enter no campo de senha
 document.getElementById("password").addEventListener("keydown", e => {
   if (e.key === "Enter") fazerLogin();
 });

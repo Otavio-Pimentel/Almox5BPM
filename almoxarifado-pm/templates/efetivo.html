@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -56,7 +57,7 @@
 </style>
 </head>
 <body>
-<script src="/static/app.js?v=2"></script>
+<script src="{% static 'app.js' %}"></script>
 <script>
   // Isso garante que se não houver token, ele nem carrega a página e vai pro login
   requireAuth(); 
@@ -68,10 +69,10 @@
     <p>Sistema de Gestão PM</p>
   </div>
   <div style="padding:16px 0;">
-    <a href="/" class="nav-item"><span>📊</span> Dashboard</a>
-    <a href="/painel-cautela" class="nav-item"><span>📋</span> Cautelas</a>
-    <a href="/estoque" class="nav-item"><span>🔫</span> Estoque</a>
-    <a href="/efetivo" class="nav-item active"><span>👮</span> Efetivo</a>
+    <a href="/" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="/cautelas/" class="nav-item"><span class="nav-icon">📋</span> Cautelas</a>
+    <a href="/estoque/" class="nav-item"><span class="nav-icon">🔫</span> Estoque</a>
+    <a href="/efetivo/" class="nav-item active"><span class="nav-icon">👮</span> Efetivo</a>
   </div>
 </nav>
 

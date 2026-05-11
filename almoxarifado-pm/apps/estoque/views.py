@@ -227,3 +227,20 @@ class ItemViewSet(AuditoriaMixin, RBACMixin, viewsets.ModelViewSet):
         from apps.cautelas.serializers import CautelaSerializer
         serializer = CautelaSerializer(cautelas, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], url_path='serie/(?P<numero_serie>[^/.]+)')
+    def buscar_por_serie(self, request, numero_serie=None):
+        """
+        GET /api/itens/serie/AR2024001/
+        
+        Custom endpoint to find item by serial number.
+        """
+        try:
+            item = self.get_queryset().get(numero_serie=numero_serie)
+            serializer = self.get_serializer(item)
+            return Response(serializer.data)
+        except Item.DoesNotExist:
+            return Response(
+                {'detail': f'Item com série "{numero_serie}" não encontrado.'},
+                status=404
+            )

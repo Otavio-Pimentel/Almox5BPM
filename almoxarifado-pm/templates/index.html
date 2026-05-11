@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -85,7 +86,7 @@
 </style>
 </head>
 <body>
-<script src="/static/app.js?v=2"></script>
+<script src="{% static 'app.js' %}"></script>
 <script>
   // Isso garante que se não houver token, ele nem carrega a página e vai pro login
   requireAuth(); 
@@ -99,9 +100,9 @@
   </div>
   <div style="padding:16px 0;">
     <a href="/" class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
-    <a href="/painel-cautela" class="nav-item"><span class="nav-icon">📋</span> Cautelas</a>
-    <a href="/estoque" class="nav-item"><span class="nav-icon">🔫</span> Estoque</a>
-    <a href="/efetivo" class="nav-item"><span class="nav-icon">👮</span> Efetivo</a>
+    <a href="/cautelas/" class="nav-item"><span class="nav-icon">📋</span> Cautelas</a>
+    <a href="/estoque/" class="nav-item"><span class="nav-icon">🔫</span> Estoque</a>
+    <a href="/efetivo/" class="nav-item"><span class="nav-icon">👮</span> Efetivo</a> 
   </div>
   <div style="margin-top:auto; padding:16px 20px; border-top:1px solid var(--border);">
     <div style="font-size:0.7rem; color:var(--muted); line-height:1.6;">
@@ -176,7 +177,7 @@ atualizarRelogio();
 // Carrega os dados do dashboard
 async function carregarDashboard() {
   try {
-    const stats = await apiFetch("/dashboard/stats");
+    const stats = await apiFetch("dashboard/stats");
     document.getElementById("s-cautelas-ativas").textContent = stats.cautelas_ativas;
     document.getElementById("s-atraso").textContent = stats.cautelas_em_atraso;
     document.getElementById("s-manutencao").textContent = stats.itens_em_manutencao;

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -71,7 +72,7 @@
 </style>
 </head>
 <body>
-<script src="/static/app.js?v=2"></script>
+<script src="{% static 'app.js' %}"></script>
 <script>
   // Isso garante que se não houver token, ele nem carrega a página e vai pro login
   requireAuth(); 
@@ -83,10 +84,10 @@
     <p>Sistema de Gestão PM</p>
   </div>
   <div style="padding:16px 0;">
-    <a href="/" class="nav-item"><span>📊</span> Dashboard</a>
-    <a href="/painel-cautela" class="nav-item active"><span>📋</span> Cautelas</a>
-    <a href="/estoque" class="nav-item"><span>🔫</span> Estoque</a>
-    <a href="/efetivo" class="nav-item"><span>👮</span> Efetivo</a>
+    <a href="/" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="/cautelas/" class="nav-item active"><span class="nav-icon">📋</span> Cautelas</a>
+    <a href="/estoque/" class="nav-item"><span class="nav-icon">🔫</span> Estoque</a>
+    <a href="/efetivo/" class="nav-item"><span class="nav-icon">👮</span> Efetivo</a>
   </div>
 </nav>
 
@@ -211,7 +212,7 @@ async function buscarPolicial() {
   const mat = document.getElementById("nc-matricula").value.trim();
   if (!mat) return;
   try {
-    const p = await apiFetch(`/policiais/matricula/${encodeURIComponent(mat)}`);
+    const p = await apiFetch(`policiais/matricula/${mat}`);
     document.getElementById("nc-policial-id").value = p.id;
     document.getElementById("pv-nome").textContent = `${p.posto_graduacao} ${p.nome_guerra}`;
     document.getElementById("pv-detalhe").textContent = `Matrícula: ${p.matricula} — ${p.companhia_pelotao||''} — Status: ${p.status}`;
@@ -232,7 +233,7 @@ async function buscarItem() {
   const serie = document.getElementById("nc-serie").value.trim();
   if (!serie) return;
   try {
-    const i = await apiFetch(`/itens/serie/${encodeURIComponent(serie)}`);
+    const i = await apiFetch(`itens/serie/${serie}`);
     document.getElementById("nc-item-id").value = i.id;
     document.getElementById("pv-item-nome").textContent = i.descricao;
     document.getElementById("pv-item-detalhe").textContent = `Tipo: ${i.tipo_material} | Condição: ${i.condicao} | Disponível: ${i.quantidade_disponivel}`;
